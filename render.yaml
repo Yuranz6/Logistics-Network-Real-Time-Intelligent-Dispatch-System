@@ -1,0 +1,17 @@
+services:
+  # Dispatch Center Service (主服务)
+  - type: web
+    name: logistics-dispatch-center
+    env: python
+    region: oregon
+    plan: free
+    rootDir: applications/scheduler
+    # Render 会自动读取 apt.txt 安装系统依赖
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python dispatch_center.py
+    envVars:
+      - key: CONFLUENT_BOOTSTRAP_SERVERS
+        sync: false  # 需要在 Render Dashboard 中手动设置
+      - key: PYTHON_VERSION
+        value: 3.11.0
+

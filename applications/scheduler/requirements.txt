@@ -1,0 +1,11 @@
+# Core dependencies for Dispatch Center Service
+# 使用 kafka-python-ng 替代 kafka-python（支持 Python 3.12+，修复了兼容性问题）
+# kafka-python-ng 是 kafka-python 的维护分支，API 完全兼容
+kafka-python-ng==2.2.3
+fastapi==0.104.1
+uvicorn==0.24.0
+python-dotenv==1.0.0
+websockets==12.0
+# 使用 pydantic 1.10.x（纯 Python，不需要 Rust 编译，兼容 FastAPI 0.104.1）
+pydantic==1.10.13
+
