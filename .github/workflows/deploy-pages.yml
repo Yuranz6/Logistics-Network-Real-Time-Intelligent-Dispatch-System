@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    timeout-minutes: 30
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -34,16 +35,26 @@ jobs:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: applications/dashboard/package-lock.json
+        timeout-minutes: 5
 
       - name: Install dependencies
         working-directory: applications/dashboard
-        run: npm ci
+        timeout-minutes: 10
+        run: |
+          echo "开始安装依赖..."
+          npm install --legacy-peer-deps || npm install
+          echo "依赖安装完成"
 
       - name: Build
         working-directory: applications/dashboard
+        timeout-minutes: 15
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'https://logistics-dispatch-center.onrender.com' }}
-        run: npm run build
+        run: |
+          echo "开始构建应用..."
+          echo "后端 API URL: $REACT_APP_API_URL"
+          npm run build
+          echo "构建完成"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
