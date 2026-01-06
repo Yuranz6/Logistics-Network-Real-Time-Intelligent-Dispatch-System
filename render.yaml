@@ -12,6 +12,10 @@ services:
     envVars:
       - key: CONFLUENT_BOOTSTRAP_SERVERS
         sync: false  # 需要在 Render Dashboard 中手动设置
+      - key: CONFLUENT_API_KEY
+        sync: false  # 需要在 Render Dashboard 中手动设置
+      - key: CONFLUENT_API_SECRET
+        sync: false  # 需要在 Render Dashboard 中手动设置
       - key: PYTHON_VERSION
         value: 3.11.0
 
