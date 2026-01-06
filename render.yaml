@@ -7,7 +7,19 @@ services:
     plan: free
     rootDir: applications/scheduler
     # Render 会自动读取 apt.txt 安装系统依赖
-    buildCommand: pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements.txt
+    # 优化构建命令以避免 metadata-generation-failed 错误
+    buildCommand: |
+      python -m pip install --upgrade pip setuptools wheel
+      # 先安装基础依赖
+      pip install --no-cache-dir python-dotenv==1.0.0
+      pip install --no-cache-dir websockets==12.0
+      # 安装 pydantic（可能有编译问题，使用备选方案）
+      pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
+      # 安装 FastAPI 和 Uvicorn
+      pip install --no-cache-dir 'fastapi==0.104.1'
+      pip install --no-cache-dir 'uvicorn[standard]==0.24.0'
+      # 安装 Kafka 客户端
+      pip install --no-cache-dir 'kafka-python-ng==2.2.3'
     startCommand: python dispatch_center.py
     envVars:
       - key: CONFLUENT_BOOTSTRAP_SERVERS
