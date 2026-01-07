@@ -13,24 +13,30 @@ services:
       # 检查 Python 版本，确保使用 3.11 而不是 3.13
       python --version
       if ! python --version | grep -q "3.11"; then
-        echo "错误: 需要使用 Python 3.11，但检测到其他版本"
+        echo "错误: 需要使用 Python 3.11，但检测到其他版本。请在 Render Dashboard 中设置 Python 版本为 3.11.0"
         exit 1
       fi
       # 升级 pip
       python -m pip install --upgrade pip setuptools wheel
-      # 分步安装依赖，明确不安装 pandas
-      # 使用 --no-deps 避免安装不必要的依赖
-      pip install --no-cache-dir python-dotenv==1.0.0
-      pip install --no-cache-dir websockets==12.0
-      pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
-      # fastapi 和 uvicorn 使用 --no-deps 避免安装 pandas
-      pip install --no-cache-dir --no-deps 'fastapi==0.104.1' || pip install --no-cache-dir 'fastapi==0.104.1'
-      pip install --no-cache-dir 'starlette>=0.27.0' || true
-      pip install --no-cache-dir --no-deps 'uvicorn==0.24.0' || pip install --no-cache-dir 'uvicorn==0.24.0'
-      pip install --no-cache-dir 'h11>=0.8' || true
-      pip install --no-cache-dir 'kafka-python-ng==2.2.3'
+      # 设置环境变量，明确告诉 pip 不要安装 pandas
+      export PIP_NO_BUILD_ISOLATION=1
+      # 使用最小化 requirements 文件，明确不包含 pandas
+      # 如果安装过程中某个包尝试安装 pandas，pip 会因为找不到合适的版本而跳过
+      pip install --no-cache-dir --no-build-isolation -r requirements-minimal.txt 2>&1 | grep -v "pandas" || {
+        echo "安装过程中检测到 pandas 相关错误，尝试使用 --no-deps 方法"
+        # 如果失败，使用 --no-deps 方法手动安装
+        pip install --no-cache-dir --no-deps python-dotenv==1.0.0
+        pip install --no-cache-dir --no-deps websockets==12.0
+        pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
+        pip install --no-cache-dir --no-deps 'fastapi==0.104.1'
+        pip install --no-cache-dir 'starlette>=0.27.0'
+        pip install --no-cache-dir 'typing-extensions>=4.0.0' || true
+        pip install --no-cache-dir --no-deps 'uvicorn==0.24.0'
+        pip install --no-cache-dir 'h11>=0.8'
+        pip install --no-cache-dir 'kafka-python-ng==2.2.3'
+      }
       # 验证安装，确保没有 pandas
-      pip list | grep -i pandas && (echo "警告: 检测到 pandas，尝试卸载" && pip uninstall -y pandas numpy scipy scikit-learn || true) || echo "✓ 确认未安装 pandas"
+      pip list | grep -i pandas && (echo "警告: 检测到 pandas，卸载中..." && pip uninstall -y pandas numpy scipy scikit-learn 2>/dev/null || true) || echo "✓ 确认未安装 pandas"
     startCommand: python dispatch_center.py
     envVars:
       - key: CONFLUENT_BOOTSTRAP_SERVERS
