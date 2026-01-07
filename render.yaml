@@ -11,17 +11,13 @@ services:
     # rootDir 已设置为 applications/scheduler，所以直接使用当前目录的 requirements.txt
     buildCommand: |
       python -m pip install --upgrade pip setuptools wheel
-      # 明确使用当前目录（applications/scheduler）的 requirements.txt
-      # 避免 Render 自动读取根目录包含 pandas 的 requirements.txt
-      # 分步安装，确保每个包都成功安装
-      pip install --no-cache-dir python-dotenv==1.0.0
-      pip install --no-cache-dir websockets==12.0
-      pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
-      pip install --no-cache-dir 'fastapi==0.104.1'
-      pip install --no-cache-dir 'uvicorn==0.24.0'
-      pip install --no-cache-dir 'kafka-python-ng==2.2.3'
+      # 使用最小化 requirements 文件，明确不包含 pandas
+      # 如果某个包尝试安装 pandas，我们会在最后卸载它
+      pip install --no-cache-dir -r requirements-minimal.txt || pip install --no-cache-dir -r requirements.txt
+      # 如果 pandas 被意外安装，立即卸载
+      pip uninstall -y pandas numpy scipy scikit-learn || true
       # 验证安装，确保没有 pandas
-      pip list | grep -i pandas && echo "警告: 检测到 pandas" || echo "✓ 未安装 pandas"
+      pip list | grep -i pandas && echo "警告: 仍然检测到 pandas" || echo "✓ 确认未安装 pandas"
     startCommand: python dispatch_center.py
     envVars:
       - key: CONFLUENT_BOOTSTRAP_SERVERS
