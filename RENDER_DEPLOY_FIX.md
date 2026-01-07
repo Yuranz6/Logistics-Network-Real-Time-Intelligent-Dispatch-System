@@ -95,11 +95,19 @@ pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
 - 确保 `apt.txt` 包含 `gcc` 和 `g++`
 - 或者使用纯 Python 的 kafka-python（性能较差）
 
+### 错误：pandas metadata-generation-failed
+
+**原因**：`uvicorn[standard]` 可能间接依赖 pandas，而 pandas 需要编译
+
+**解决方案**：
+- 已更新配置，使用基础 `uvicorn==0.24.0` 而不是 `uvicorn[standard]`
+- 基础 uvicorn 已经足够使用，不需要额外的标准库依赖
+
 ### 错误：uvicorn[standard] 安装失败
 
 **解决方案**：
 ```bash
-# 使用基础版本
+# 使用基础版本（已默认配置）
 pip install --no-cache-dir uvicorn==0.24.0
 ```
 

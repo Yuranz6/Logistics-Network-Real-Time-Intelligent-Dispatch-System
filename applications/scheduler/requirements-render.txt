@@ -1,10 +1,11 @@
 # Render 优化版依赖（分步安装，避免 metadata-generation-failed 错误）
 # 这个文件用于 Render 部署，如果主 requirements.txt 失败可以使用这个
+# 注意：使用基础 uvicorn 而不是 uvicorn[standard]，避免 pandas 依赖
 
 python-dotenv==1.0.0
 websockets==12.0
 pydantic==1.10.13
 fastapi==0.104.1
-uvicorn[standard]==0.24.0
+uvicorn==0.24.0
 kafka-python-ng==2.2.3
 
