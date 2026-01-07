@@ -18,25 +18,36 @@ services:
       fi
       # 升级 pip
       python -m pip install --upgrade pip setuptools wheel
-      # 设置环境变量，明确告诉 pip 不要安装 pandas
-      export PIP_NO_BUILD_ISOLATION=1
-      # 使用最小化 requirements 文件，明确不包含 pandas
-      # 如果安装过程中某个包尝试安装 pandas，pip 会因为找不到合适的版本而跳过
-      pip install --no-cache-dir --no-build-isolation -r requirements-minimal.txt 2>&1 | grep -v "pandas" || {
-        echo "安装过程中检测到 pandas 相关错误，尝试使用 --no-deps 方法"
-        # 如果失败，使用 --no-deps 方法手动安装
-        pip install --no-cache-dir --no-deps python-dotenv==1.0.0
-        pip install --no-cache-dir --no-deps websockets==12.0
-        pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
-        pip install --no-cache-dir --no-deps 'fastapi==0.104.1'
-        pip install --no-cache-dir 'starlette>=0.27.0'
-        pip install --no-cache-dir 'typing-extensions>=4.0.0' || true
-        pip install --no-cache-dir --no-deps 'uvicorn==0.24.0'
-        pip install --no-cache-dir 'h11>=0.8'
-        pip install --no-cache-dir 'kafka-python-ng==2.2.3'
-      }
-      # 验证安装，确保没有 pandas
-      pip list | grep -i pandas && (echo "警告: 检测到 pandas，卸载中..." && pip uninstall -y pandas numpy scipy scikit-learn 2>/dev/null || true) || echo "✓ 确认未安装 pandas"
+      # 完全跳过 requirements 文件，直接使用 --no-deps 安装所有包
+      # 这样可以完全避免任何间接依赖（包括 pandas）
+      echo "开始安装依赖（使用 --no-deps 方法）..."
+      # 安装基础包（不需要依赖）
+      pip install --no-cache-dir --no-deps python-dotenv==1.0.0
+      pip install --no-cache-dir --no-deps websockets==12.0
+      # 安装 pydantic（需要安装其依赖）
+      pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
+      # 安装 fastapi（使用 --no-deps，然后手动安装依赖）
+      pip install --no-cache-dir --no-deps 'fastapi==0.104.1'
+      pip install --no-cache-dir 'starlette>=0.27.0'
+      pip install --no-cache-dir 'typing-extensions>=4.0.0' || true
+      pip install --no-cache-dir 'annotated-types>=0.4.0' || true
+      # 安装 uvicorn（使用 --no-deps，然后手动安装依赖）
+      pip install --no-cache-dir --no-deps 'uvicorn==0.24.0'
+      pip install --no-cache-dir 'h11>=0.8'
+      pip install --no-cache-dir 'httptools>=0.5.0' || true
+      pip install --no-cache-dir 'websockets>=10.0' || true
+      # 安装 kafka 客户端（纯 Python，不需要额外依赖）
+      pip install --no-cache-dir 'kafka-python-ng==2.2.3'
+      # 验证安装
+      echo "验证安装的包..."
+      pip list
+      # 确认没有 pandas
+      if pip list | grep -qi pandas; then
+        echo "警告: 检测到 pandas，卸载中..."
+        pip uninstall -y pandas numpy scipy scikit-learn 2>/dev/null || true
+      else
+        echo "✓ 确认未安装 pandas"
+      fi
     startCommand: python dispatch_center.py
     envVars:
       - key: CONFLUENT_BOOTSTRAP_SERVERS
