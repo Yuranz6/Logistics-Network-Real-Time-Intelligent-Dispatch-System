@@ -10,14 +10,27 @@ services:
     # 优化构建命令以避免 metadata-generation-failed 错误
     # rootDir 已设置为 applications/scheduler，所以直接使用当前目录的 requirements.txt
     buildCommand: |
+      # 检查 Python 版本，确保使用 3.11 而不是 3.13
+      python --version
+      if ! python --version | grep -q "3.11"; then
+        echo "错误: 需要使用 Python 3.11，但检测到其他版本"
+        exit 1
+      fi
+      # 升级 pip
       python -m pip install --upgrade pip setuptools wheel
-      # 使用最小化 requirements 文件，明确不包含 pandas
-      # 如果某个包尝试安装 pandas，我们会在最后卸载它
-      pip install --no-cache-dir -r requirements-minimal.txt || pip install --no-cache-dir -r requirements.txt
-      # 如果 pandas 被意外安装，立即卸载
-      pip uninstall -y pandas numpy scipy scikit-learn || true
+      # 分步安装依赖，明确不安装 pandas
+      # 使用 --no-deps 避免安装不必要的依赖
+      pip install --no-cache-dir python-dotenv==1.0.0
+      pip install --no-cache-dir websockets==12.0
+      pip install --no-cache-dir 'pydantic==1.10.13' || pip install --no-cache-dir 'pydantic>=1.10.0,<2.0'
+      # fastapi 和 uvicorn 使用 --no-deps 避免安装 pandas
+      pip install --no-cache-dir --no-deps 'fastapi==0.104.1' || pip install --no-cache-dir 'fastapi==0.104.1'
+      pip install --no-cache-dir 'starlette>=0.27.0' || true
+      pip install --no-cache-dir --no-deps 'uvicorn==0.24.0' || pip install --no-cache-dir 'uvicorn==0.24.0'
+      pip install --no-cache-dir 'h11>=0.8' || true
+      pip install --no-cache-dir 'kafka-python-ng==2.2.3'
       # 验证安装，确保没有 pandas
-      pip list | grep -i pandas && echo "警告: 仍然检测到 pandas" || echo "✓ 确认未安装 pandas"
+      pip list | grep -i pandas && (echo "警告: 检测到 pandas，尝试卸载" && pip uninstall -y pandas numpy scipy scikit-learn || true) || echo "✓ 确认未安装 pandas"
     startCommand: python dispatch_center.py
     envVars:
       - key: CONFLUENT_BOOTSTRAP_SERVERS
@@ -28,4 +41,6 @@ services:
         sync: false  # 需要在 Render Dashboard 中手动设置
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: RUNTIME_VERSION
+        value: python-3.11.0
 
