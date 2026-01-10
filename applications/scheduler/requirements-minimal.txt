@@ -1,5 +1,4 @@
-# 最小化依赖列表，明确排除 pandas 和所有可能引入 pandas 的包
-# 如果标准 requirements.txt 仍然失败，可以使用这个文件
+
 
 python-dotenv==1.0.0
 websockets==12.0
